@@ -1,0 +1,10 @@
+services:
+  taskflow-dev:
+    build:
+      context: ./
+      dockerfile: Dockerfile.dev
+    container_name: taskflow
+    volumes:
+        - './:/workspace'
+    stdin_open: true
+    tty: true
