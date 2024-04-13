@@ -22,4 +22,5 @@ class Task3(taskflow.task.Task):
 def test_case1():
     tasks = [Task1(), Task2(), Task3()]
     p = taskflow.task.Pool(tasks)
-    p.run()
+    result = p.run()
+    print('result', result)
