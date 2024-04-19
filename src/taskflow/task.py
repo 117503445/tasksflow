@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Optional
 import inspect
-import sqlite3
-from pathlib import Path
+from .cache import CacheProvider, SqliteCacheProvider
 
 
 class Task(ABC):
@@ -15,9 +14,12 @@ class Task(ABC):
 
 
 class Pool:
-    def __init__(self, tasks: list[Task]):
+    def __init__(self, tasks: list[Task], cache_provider: Optional[CacheProvider] = None):
         self.tasks = tasks
         self.d: dict[str, Any] = {}
+        if cache_provider is None:
+            cache_provider = SqliteCacheProvider()
+        self.cache_provider = cache_provider
 
     def _execute_task(self, task: Task, params: dict[str, Any]) -> dict[str, Any]:
         print(f"run task {task}, enable_cache: {task.enable_cache}")
@@ -59,82 +61,3 @@ class Pool:
                 self.d.update(result)
             # print(self.d)
         return self.d
-
-
-class Cache(ABC):
-
-    @abstractmethod
-    def get(self, code: str, params: dict[str, Any]) -> dict[str, Any] | None:
-        pass
-
-    @abstractmethod
-    def set(self, code: str, params: dict[str, Any], result: dict[str, Any]):
-        pass
-
-    @abstractmethod
-    def clear(self, remain_records: int):
-        pass
-
-
-class SqliteCache(Cache):
-    def __init__(self, db_path: Path):
-        self.db_path = db_path
-
-    def _create_db(self):
-        if self.db_path.exists():
-            return
-        
-        with sqlite3.connect(self.db_path) as conn:
-            c = conn.cursor()
-            # unique constraint (code, params)
-            c.execute(
-                "CREATE TABLE cache (code TEXT, params TEXT, result TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, UNIQUE(code, params))"
-            )
-            conn.commit()
-
-    def get(self, code: str, params: dict[str, Any]) -> dict[str, Any] | None:
-        if not self.db_path.exists():
-            self._create_db()
-
-        with sqlite3.connect(self.db_path) as conn:
-            c = conn.cursor()
-            c.execute(
-                "SELECT result FROM cache WHERE code = ? AND params = ?",
-                (code, str(params)),
-            )
-            result = c.fetchone()
-            if result is None:
-                return None
-            return result
-
-    def set(self, code: str, params: dict[str, Any], result: dict[str, Any]):
-        if not self.db_path.exists():
-            self._create_db()
-
-        with sqlite3.connect(self.db_path) as conn:
-            c = conn.cursor()
-            c.execute(
-                "INSERT OR REPLACE INTO cache (code, params, result) VALUES (?, ?, ?)",
-                (code, str(params), str(result)),
-            )
-
-            conn.commit()
-
-    def clear(self, remain_records: int):
-        if remain_records < 0:
-            raise ValueError("remain_records must be greater than or equal to 0")
-
-        if not self.db_path.exists():
-            return
-
-        if remain_records == 0:
-            self.db_path.unlink()
-            return
-
-        with sqlite3.connect(self.db_path) as conn:
-            c = conn.cursor()
-            c.execute(
-                "DELETE FROM cache WHERE ROWID NOT IN (SELECT ROWID FROM cache ORDER BY created_at DESC LIMIT ?)",
-                (remain_records,),
-            )
-            conn.commit()

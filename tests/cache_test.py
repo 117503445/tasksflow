@@ -1,9 +1,9 @@
-import taskflow.task
+import taskflow.cache
 from pathlib import Path
 
 
 def test_case1():
-    c = taskflow.task.SqliteCache(Path("test.db"))
+    c = taskflow.cache.SqliteCacheProvider(Path("test.db"))
     result = {"c": 3}
     c.set("task1", {"a": 1, "b": 2}, result)
 
