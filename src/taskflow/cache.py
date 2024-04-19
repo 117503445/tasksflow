@@ -19,7 +19,7 @@ class CacheProvider(ABC):
         pass
 
     @abstractmethod
-    def clear(self, remain_records: int):
+    def clear(self, remain_records: int = 0):
         pass
 
 
@@ -35,7 +35,7 @@ class MemoryCacheProvider(CacheProvider):
         params_bin = pickle.dumps(params)
         self.d[(code, params_bin)] = result
 
-    def clear(self, remain_records: int):
+    def clear(self, remain_records: int = 0):
         if remain_records < 0:
             raise ValueError("remain_records must be greater than or equal to 0")
         if remain_records == 0:
@@ -96,7 +96,7 @@ class SqliteCacheProvider(CacheProvider):
 
             conn.commit()
 
-    def clear(self, remain_records: int):
+    def clear(self, remain_records: int = 0):
         if remain_records < 0:
             raise ValueError("remain_records must be greater than or equal to 0")
 

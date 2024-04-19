@@ -14,7 +14,9 @@ class Task(ABC):
 
 
 class Pool:
-    def __init__(self, tasks: list[Task], cache_provider: Optional[CacheProvider] = None):
+    def __init__(
+        self, tasks: list[Task], cache_provider: Optional[CacheProvider] = None
+    ):
         self.tasks = tasks
         self.d: dict[str, Any] = {}
         if cache_provider is None:
@@ -26,11 +28,15 @@ class Pool:
         if not task.enable_cache:
             return task.run(**params)
 
-        # get the task code
         task_code = inspect.getsource(task.__class__)
-        print(f"task_code: {task_code}")
 
-        return task.run(**params)
+        cache_output = self.cache_provider.get(task_code, params)
+        if cache_output is not None:
+            return cache_output
+
+        output = task.run(**params)
+        self.cache_provider.set(task_code, params, output)
+        return output
 
     def run(self):
         for task in self.tasks:

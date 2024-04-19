@@ -10,4 +10,4 @@ def test_case1():
     cache_result = c.get("task1", {"a": 1, "b": 2})
     print("cache_result", cache_result, type(cache_result))
 
-    c.clear(0)
+    c.clear()
