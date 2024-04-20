@@ -4,21 +4,21 @@ from abc import ABC, abstractmethod
 from typing import Optional
 from pathlib import Path
 from .common import Code, Payload, PayloadBin
-
+from loguru import logger
 
 class CacheProvider(ABC):
 
     @abstractmethod
     def get(self, code: Code, params: Payload) -> Optional[Payload]:
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def set(self, code: Code, params: Payload, result: Payload):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def clear(self, remain_records: int = 0):
-        pass
+        raise NotImplementedError
 
 
 class MemoryCacheProvider(CacheProvider):
@@ -79,6 +79,7 @@ class SqliteCacheProvider(CacheProvider):
             return result
 
     def set(self, code: str, params: Payload, result: Payload):
+        logger.debug(f"set cache for code: {code}, params: {params}, result: {result}")
         if not self.db_path.exists():
             self._create_db()
 
@@ -93,6 +94,7 @@ class SqliteCacheProvider(CacheProvider):
             )
 
             conn.commit()
+        
 
     def clear(self, remain_records: int = 0):
         if remain_records < 0:

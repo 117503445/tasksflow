@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Callable
 import inspect
-from .cache import CacheProvider, SqliteCacheProvider
+from .cache import CacheProvider, SqliteCacheProvider, MemoryCacheProvider
 from loguru import logger
 
 # import multiprocessing
@@ -9,20 +9,45 @@ import concurrent.futures
 
 from .common import Code, Payload, PayloadBin
 from enum import Enum
+from copy import deepcopy
 
 
 class Task(ABC):
     def __init__(self, enable_cache: bool = True):
         self.enable_cache = enable_cache
+        self.cache_provider: Optional[CacheProvider] = None
 
     @abstractmethod
     def run(self, *args, **kwargs) -> dict[str, Any]:
-        pass
+        raise NotImplementedError
+
+    def _execute(self, *args, **kwargs):
+        logger.debug(f"execute task {self}, args: {args}, kwargs: {kwargs}")
+        if self.cache_provider is None:
+            return self.run(*args, **kwargs)
+        else:
+            task_code = inspect.getsource(self.__class__)
+            cache_output = self.cache_provider.get(task_code, kwargs)
+            if cache_output is not None:
+                logger.debug(f"cache hit for task {self}")
+                return cache_output
+
+            logger.debug(f"cache miss for task {self}")
+            output = self.run(*args, **kwargs)
+            if output is None:
+                output = {}
+            self.cache_provider.set(task_code, kwargs, output)
+            return output
 
 
 def _get_task_params_names(task: Task) -> list[str]:
     params = task.run.__code__.co_varnames
-    return [param for param in params if param != "self"]
+
+    ban_set = {"self"}
+
+    names = [param for param in params if param not in ban_set]
+    logger.debug(f"task {task} params: {names}")
+    return names
 
 
 def serial_run(tasks: list[Task]) -> dict[str, Any]:
@@ -35,7 +60,7 @@ def serial_run(tasks: list[Task]) -> dict[str, Any]:
             else:
                 raise ValueError(f"Task parameter {param} not found in the pool")
 
-        result = task.run(**task_params)
+        result = task._execute(**task_params)
         if result is not None:
             # check if result is a [str, Any] dictionary
             if not isinstance(result, dict):
@@ -53,11 +78,9 @@ def serial_run(tasks: list[Task]) -> dict[str, Any]:
 
 
 def multiprocess_run(tasks: list[Task]) -> dict[str, Any]:
-
-    # executor = concurrent.futures.ProcessPoolExecutor()
     d: dict[str, Any] = {}
     with concurrent.futures.ProcessPoolExecutor() as executor:
-        
+
         futures: list[concurrent.futures.Future] = []  # list of executing tasks
         d_future_task: dict[concurrent.futures.Future, Task] = {}
 
@@ -70,15 +93,13 @@ def multiprocess_run(tasks: list[Task]) -> dict[str, Any]:
 
         def is_task_prepared(task: Task):
             for param in _get_task_params_names(task):
-                if param == "self":
-                    continue
                 if param not in d:
                     return False
             return True
 
         for task in tasks:
             if is_task_prepared(task):
-                future = executor.submit(task.run)
+                future = executor.submit(task._execute)
                 d_task_status[task] = TaskStatus.RUNNING
                 futures.append(future)
                 d_future_task[future] = task
@@ -108,7 +129,7 @@ def multiprocess_run(tasks: list[Task]) -> dict[str, Any]:
                     for param in _get_task_params_names(task):
                         task_params[param] = d[param]
 
-                    future = executor.submit(task.run, **task_params)
+                    future = executor.submit(task._execute, **task_params)
                     d_task_status[task] = TaskStatus.RUNNING
                     futures.append(future)
                     d_future_task[future] = task
@@ -124,27 +145,18 @@ class Pool:
         cache_provider: Optional[CacheProvider] = None,
         run_func: Callable[[list[Task]], dict[str, Any]] = serial_run,
     ):
-        self.tasks = tasks
+        self.tasks = deepcopy(tasks)
+        # self.tasks = tasks
+
         self.d: dict[str, Any] = {}
         if cache_provider is None:
             cache_provider = SqliteCacheProvider()
+            # cache_provider = MemoryCacheProvider()
         self.cache_provider = cache_provider
+        for task in self.tasks:
+            task.cache_provider = self.cache_provider
         self.run_func = run_func
 
-    def _execute_task(self, task: Task, params: dict[str, Any]) -> dict[str, Any]:
-        print(f"run task {task}, enable_cache: {task.enable_cache}")
-        if not task.enable_cache:
-            return task.run(**params)
-
-        task_code = inspect.getsource(task.__class__)
-
-        cache_output = self.cache_provider.get(task_code, params)
-        if cache_output is not None:
-            return cache_output
-
-        output = task.run(**params)
-        self.cache_provider.set(task_code, params, output)
-        return output
-
     def run(self):
+        logger.debug(f"run pool")
         return self.run_func(self.tasks)

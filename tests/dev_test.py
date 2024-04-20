@@ -14,21 +14,22 @@ class Task2(taskflow.task.Task):
 
 class Task3(taskflow.task.Task):
     def run(self, c: int):
-        print(f"c = {c}")
+        pass
 
 
 class Task4(taskflow.task.Task):
     def run(self, c: int):
-        print(f"c = {c}")
+        pass
 
 
 def test_case1():
     logger.debug("test_case1 start")
     tasks = [Task1(), Task2(), Task3()]
-    p = taskflow.task.Pool(tasks, run_func=taskflow.task.multiprocess_run)
+    p = taskflow.task.Pool(tasks)
+    # p = taskflow.task.Pool(tasks, run_func=taskflow.task.multiprocess_run)
     result = p.run()
 
-    print("result", result)
+    logger.debug(f"result: {result}")
     logger.debug("test_case1 end")
 
 
@@ -38,5 +39,6 @@ def test_case2():
     p = taskflow.task.Pool(tasks, run_func=taskflow.task.multiprocess_run)
     # p = taskflow.task.Pool(tasks)
     result = p.run()
-    print("result", result)
+
+    logger.debug(f"result: {result}")
     logger.debug("test_case2 end")
