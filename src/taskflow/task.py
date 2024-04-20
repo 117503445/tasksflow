@@ -50,63 +50,59 @@ def serial_run(tasks: list[Task]) -> dict[str, Any]:
 
 
 def multiprocess_run(tasks: list[Task]) -> dict[str, Any]:
-    # pool = multiprocessing.Pool()
     executor = concurrent.futures.ProcessPoolExecutor()
     d: dict[str, Any] = {}
 
-    d_param_task: dict[str, Task] = {}
-    for task in tasks:
-        params = task.run.__code__.co_varnames
-        for param in params:
-            if param == "self":
-                continue
-            if param in d_param_task:
-                raise ValueError(f"Task parameter {param} is duplicated")
-            d_param_task[param] = task
-
-    logger.debug(f"d_param_task: {d_param_task}")
-
-    dag: dict[Task, set[Task]] = {}  # task -> dependent tasks
-    for task in tasks:
-        dag[task] = set()
-        params = task.run.__code__.co_varnames
-        for param in params:
-            if param == "self":
-                continue
-            dag[task].add(d_param_task[param])
-
-    logger.debug(f"dag: {dag}")
-
-    futures = []
-
+    futures: list[concurrent.futures.Future] = []  # list of executing tasks
     d_future_task: dict[concurrent.futures.Future, Task] = {}
     d_task_done = {t: False for t in tasks}
 
-    for task in dag:
-        if not dag[task]:
+    def is_task_prepared(task: Task):
+        params = task.run.__code__.co_varnames
+        for param in params:
+            if param == "self":
+                continue
+            if param not in d:
+                return False
+        return True
+
+    for task in tasks:
+        if is_task_prepared(task):
             future = executor.submit(task.run)
+            futures.append(future)
             d_future_task[future] = task
             logger.debug(f"submit task {task} in first round")
-            futures.append(future)
 
     while futures:
         # get the task that is done
-        for future in concurrent.futures.as_completed(futures):
-            result = future.result()
-            d.update(result)
-            task = d_future_task[future]
-            d_task_done[task] = True
-            for dep_task in dag[task]:
-                if (
-                    all(d_task_done[dep_task] for dep_task in dag[task])
-                    and not d_task_done[dep_task]
-                ):
-                    future = executor.submit(dep_task.run, **d)
-                    d_future_task[future] = dep_task
-                    futures.append(future)
+        def wait_until_any(futures: list[concurrent.futures.Future]):
+            for f in concurrent.futures.as_completed(futures):
+                return f
+            raise ValueError("No task is done")
 
-            futures.remove(future)
-            break
+        future = wait_until_any(futures)
+        futures.remove(future)
+
+        result = future.result()
+        if result is not None:
+            d.update(result)
+        t = d_future_task[future]
+        d_task_done[t] = True
+
+        for task in tasks:
+            if d_task_done[task]:
+                continue
+            if is_task_prepared(task):
+                task_params = {}
+                for param in task.run.__code__.co_varnames:
+                    if param == "self":
+                        continue
+                    task_params[param] = d[param]
+
+                future = executor.submit(task.run, **task_params)
+                futures.append(future)
+                d_future_task[future] = task
+                logger.debug(f"submit task {task} by {t}")
 
     return d
 
