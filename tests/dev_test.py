@@ -1,28 +1,42 @@
 import taskflow.task
+from loguru import logger
 
 
 class Task1(taskflow.task.Task):
     def run(self):
-        print(f"run task1")
         return {"a": 1, "b": 2}
 
 
 class Task2(taskflow.task.Task):
     def run(self, a: int, b: int):
-        print(f"run task2")
         return {"c": a + b}
 
 
 class Task3(taskflow.task.Task):
     def run(self, c: int):
-        print(f"run task3")
+        print(f"c = {c}")
+
+
+class Task4(taskflow.task.Task):
+    def run(self, c: int):
         print(f"c = {c}")
 
 
 def test_case1():
+    logger.debug("test_case1 start")
     tasks = [Task1(), Task2(), Task3()]
-
-
     p = taskflow.task.Pool(tasks, run_func=taskflow.task.multiprocess_run)
     result = p.run()
-    print('result', result)
+
+    print("result", result)
+    logger.debug("test_case1 end")
+
+
+def test_case2():
+    logger.debug("test_case2 start")
+    tasks = [Task1(), Task2(), Task3(), Task4()]
+    p = taskflow.task.Pool(tasks, run_func=taskflow.task.multiprocess_run)
+    # p = taskflow.task.Pool(tasks)
+    result = p.run()
+    print("result", result)
+    logger.debug("test_case2 end")

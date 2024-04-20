@@ -1,12 +1,10 @@
 import sqlite3
 import pickle
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Optional
 from pathlib import Path
+from .common import Code, Payload, PayloadBin
 
-Code = str
-Payload = dict[str, Any]
-PayloadBin = bytes
 
 class CacheProvider(ABC):
 

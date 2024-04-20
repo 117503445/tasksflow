@@ -7,6 +7,9 @@ from loguru import logger
 # import multiprocessing
 import concurrent.futures
 
+from .common import Code, Payload, PayloadBin
+from enum import Enum
+
 
 class Task(ABC):
     def __init__(self, enable_cache: bool = True):
@@ -17,16 +20,16 @@ class Task(ABC):
         pass
 
 
+def _get_task_params_names(task: Task) -> list[str]:
+    params = task.run.__code__.co_varnames
+    return [param for param in params if param != "self"]
+
+
 def serial_run(tasks: list[Task]) -> dict[str, Any]:
     d: dict[str, Any] = {}
     for task in tasks:
-        # get the params list of the task.run
-        params = task.run.__code__.co_varnames
-
         task_params = {}
-        for param in params:
-            if param == "self":
-                continue
+        for param in _get_task_params_names(task):
             if param in d:
                 task_params[param] = d[param]
             else:
@@ -50,59 +53,66 @@ def serial_run(tasks: list[Task]) -> dict[str, Any]:
 
 
 def multiprocess_run(tasks: list[Task]) -> dict[str, Any]:
-    executor = concurrent.futures.ProcessPoolExecutor()
+
+    # executor = concurrent.futures.ProcessPoolExecutor()
     d: dict[str, Any] = {}
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        
+        futures: list[concurrent.futures.Future] = []  # list of executing tasks
+        d_future_task: dict[concurrent.futures.Future, Task] = {}
 
-    futures: list[concurrent.futures.Future] = []  # list of executing tasks
-    d_future_task: dict[concurrent.futures.Future, Task] = {}
-    d_task_done = {t: False for t in tasks}
+        class TaskStatus(Enum):
+            NOT_STARTED = 0
+            RUNNING = 1
+            DONE = 2
 
-    def is_task_prepared(task: Task):
-        params = task.run.__code__.co_varnames
-        for param in params:
-            if param == "self":
-                continue
-            if param not in d:
-                return False
-        return True
+        d_task_status = {t: TaskStatus.NOT_STARTED for t in tasks}
 
-    for task in tasks:
-        if is_task_prepared(task):
-            future = executor.submit(task.run)
-            futures.append(future)
-            d_future_task[future] = task
-            logger.debug(f"submit task {task} in first round")
-
-    while futures:
-        # get the task that is done
-        def wait_until_any(futures: list[concurrent.futures.Future]):
-            for f in concurrent.futures.as_completed(futures):
-                return f
-            raise ValueError("No task is done")
-
-        future = wait_until_any(futures)
-        futures.remove(future)
-
-        result = future.result()
-        if result is not None:
-            d.update(result)
-        t = d_future_task[future]
-        d_task_done[t] = True
+        def is_task_prepared(task: Task):
+            for param in _get_task_params_names(task):
+                if param == "self":
+                    continue
+                if param not in d:
+                    return False
+            return True
 
         for task in tasks:
-            if d_task_done[task]:
-                continue
             if is_task_prepared(task):
-                task_params = {}
-                for param in task.run.__code__.co_varnames:
-                    if param == "self":
-                        continue
-                    task_params[param] = d[param]
-
-                future = executor.submit(task.run, **task_params)
+                future = executor.submit(task.run)
+                d_task_status[task] = TaskStatus.RUNNING
                 futures.append(future)
                 d_future_task[future] = task
-                logger.debug(f"submit task {task} by {t}")
+                logger.debug(f"submit task {task} in first round")
+
+        while futures:
+            # get the task that is done
+            def wait_until_any(futures: list[concurrent.futures.Future]):
+                for f in concurrent.futures.as_completed(futures):
+                    return f
+                raise ValueError("No task is done")
+
+            future = wait_until_any(futures)
+            futures.remove(future)
+
+            result = future.result()
+            if result is not None:
+                d.update(result)
+            t = d_future_task[future]
+            d_task_status[t] = TaskStatus.DONE
+
+            for task in tasks:
+                if d_task_status[task] != TaskStatus.NOT_STARTED:
+                    continue
+                if is_task_prepared(task):
+                    task_params = {}
+                    for param in _get_task_params_names(task):
+                        task_params[param] = d[param]
+
+                    future = executor.submit(task.run, **task_params)
+                    d_task_status[task] = TaskStatus.RUNNING
+                    futures.append(future)
+                    d_future_task[future] = task
+                    logger.debug(f"submit task {task} by {t}")
 
     return d
 
