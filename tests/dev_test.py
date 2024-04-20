@@ -23,6 +23,6 @@ def test_case1():
     tasks = [Task1(), Task2(), Task3()]
 
 
-    p = taskflow.task.Pool(tasks)
+    p = taskflow.task.Pool(tasks, run_func=taskflow.task.multiprocess_run)
     result = p.run()
     print('result', result)
