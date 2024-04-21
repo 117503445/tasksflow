@@ -1,9 +1,9 @@
 services:
-  taskflow-dev:
+  tasksflow-dev:
     build:
       context: ./
       dockerfile: Dockerfile.dev
-    container_name: taskflow
+    container_name: tasksflow
     volumes:
         - './:/workspace'
     stdin_open: true

@@ -11,7 +11,7 @@
 iniconfig==2.0.0
     # via pytest
 loguru==0.7.2
-    # via taskflow
+    # via tasksflow
 packaging==24.0
     # via pytest
 pluggy==1.4.0
