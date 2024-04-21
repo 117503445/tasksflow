@@ -1,8 +1,3 @@
 # tasksflow
 
-```
-rye sync
-
-rye test
-rye test -- -s
-```
+Supporting complex processes through tasks
