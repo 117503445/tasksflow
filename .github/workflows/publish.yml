@@ -22,4 +22,9 @@ jobs:
 
       - run: docker exec tasksflow rye sync
 
-      - run: docker exec tasksflow rye publish
+      - run: docker exec tasksflow rye build
+
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
