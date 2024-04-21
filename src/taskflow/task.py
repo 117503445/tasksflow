@@ -50,31 +50,37 @@ def _get_task_params_names(task: Task) -> list[str]:
     return names
 
 
+def _is_payload_valid(payload: Payload) -> bool:
+    if payload is None:
+        return False
+    if not isinstance(payload, dict):
+        return False
+    if not all(isinstance(k, str) for k in payload.keys()):
+        return False
+    return True
+
+
 def serial_run(tasks: list[Task]) -> dict[str, Any]:
-    d: dict[str, Any] = {}
+    d_payload: dict[str, Any] = {}
     for task in tasks:
         task_params = {}
         for param in _get_task_params_names(task):
-            if param in d:
-                task_params[param] = d[param]
+            if param in d_payload:
+                task_params[param] = d_payload[param]
             else:
-                raise ValueError(f"Task parameter {param} not found in the pool")
+                raise ValueError(f"Task parameter {param} not given by previous tasks")
 
         result = task._execute(**task_params)
         if result is not None:
-            # check if result is a [str, Any] dictionary
-            if not isinstance(result, dict):
-                raise TypeError("Task result must be a dictionary")
-            if not all(isinstance(k, str) for k in result.keys()):
-                raise TypeError("Task result keys must be strings")
+            if not _is_payload_valid(result):
+                raise ValueError(f"Task result must be a dict[str, Any] or None, but get {result} for task {task}")
 
             # key should be unique
-            if any(k in d for k in result.keys()):
+            if any(k in d_payload for k in result.keys()):
                 raise ValueError("Task result keys must be unique")
 
-            d.update(result)
-        # print(d)
-    return d
+            d_payload.update(result)
+    return d_payload
 
 
 def multiprocess_run(tasks: list[Task]) -> dict[str, Any]:
@@ -117,7 +123,10 @@ def multiprocess_run(tasks: list[Task]) -> dict[str, Any]:
 
             result = future.result()
             if result is not None:
+                if not _is_payload_valid(result):
+                    raise ValueError(f"Task result must be a dict[str, Any] or None, but get {result} for task {task}")
                 d.update(result)
+                
             t = d_future_task[future]
             d_task_status[t] = TaskStatus.DONE
 
@@ -143,20 +152,20 @@ class Pool:
         self,
         tasks: list[Task],
         cache_provider: Optional[CacheProvider] = None,
-        run_func: Callable[[list[Task]], dict[str, Any]] = serial_run,
+        run_func: Callable[[list[Task]], Payload] = serial_run,
     ):
+        # use deepcopy to prevent tasks from being modified
         self.tasks = deepcopy(tasks)
-        # self.tasks = tasks
 
-        self.d: dict[str, Any] = {}
         if cache_provider is None:
             cache_provider = SqliteCacheProvider()
             # cache_provider = MemoryCacheProvider()
         self.cache_provider = cache_provider
+
         for task in self.tasks:
             task.cache_provider = self.cache_provider
+
         self.run_func = run_func
 
     def run(self):
-        logger.debug(f"run pool")
         return self.run_func(self.tasks)

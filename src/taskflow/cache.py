@@ -6,6 +6,7 @@ from pathlib import Path
 from .common import Code, Payload, PayloadBin
 from loguru import logger
 
+
 class CacheProvider(ABC):
 
     @abstractmethod
@@ -19,6 +20,18 @@ class CacheProvider(ABC):
     @abstractmethod
     def clear(self, remain_records: int = 0):
         raise NotImplementedError
+
+    def _check_valid(self) -> bool:
+        result = {"c": 3}
+        self.set("task1", {"a": 1, "b": 2}, result)
+        cache_result = self.get("task1", {"a": 1, "b": 2})
+        if cache_result is None:
+            return False
+        if cache_result != result:
+            return False
+        self.clear()
+        cache_result = self.get("task1", {"a": 1, "b": 2})
+        return cache_result is None
 
 
 class MemoryCacheProvider(CacheProvider):
@@ -94,7 +107,6 @@ class SqliteCacheProvider(CacheProvider):
             )
 
             conn.commit()
-        
 
     def clear(self, remain_records: int = 0):
         if remain_records < 0:
