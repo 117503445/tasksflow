@@ -73,7 +73,9 @@ def serial_run(tasks: list[Task]) -> dict[str, Any]:
         result = task._execute(**task_params)
         if result is not None:
             if not _is_payload_valid(result):
-                raise ValueError(f"Task result must be a dict[str, Any] or None, but get {result} for task {task}")
+                raise ValueError(
+                    f"Task result must be a dict[str, Any] or None, but get {result} for task {task}"
+                )
 
             # key should be unique
             if any(k in d_payload for k in result.keys()):
@@ -124,9 +126,11 @@ def multiprocess_run(tasks: list[Task]) -> dict[str, Any]:
             result = future.result()
             if result is not None:
                 if not _is_payload_valid(result):
-                    raise ValueError(f"Task result must be a dict[str, Any] or None, but get {result} for task {task}")
+                    raise ValueError(
+                        f"Task result must be a dict[str, Any] or None, but get {result} for task {task}"
+                    )
                 d.update(result)
-                
+
             t = d_future_task[future]
             d_task_status[t] = TaskStatus.DONE
 

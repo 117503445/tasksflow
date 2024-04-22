@@ -1,6 +1,8 @@
 import tasksflow.task
 from loguru import logger
 
+logger.enable("tasksflow")
+
 
 class Task1(tasksflow.task.Task):
     def run(self):

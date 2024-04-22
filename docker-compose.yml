@@ -6,5 +6,6 @@ services:
     container_name: tasksflow
     volumes:
         - './:/workspace'
+        - './scripts/entrypoint:/entrypoint'
     stdin_open: true
     tty: true
