@@ -3,9 +3,20 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile.dev
-    container_name: tasksflow
+    container_name: tasksflow-dev
     volumes:
         - './:/workspace'
         - './scripts/entrypoint:/entrypoint'
+        - tasksflow-dev-vsc:/root/.vscode-server'
     stdin_open: true
     tty: true
+
+    healthcheck:
+      test: ["CMD", "test", "!", "-f", "/entrypoint.py.lock"]
+      interval: 3s
+      timeout: 1s
+      retries: 5
+      start_period: 240s
+
+volumes:
+  tasksflow-dev-vsc:
