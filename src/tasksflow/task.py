@@ -1,15 +1,12 @@
+import inspect
+import concurrent.futures
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Callable
-import inspect
-from .cache import CacheProvider, SqliteCacheProvider, MemoryCacheProvider
-from loguru import logger
-
-# import multiprocessing
-import concurrent.futures
-
-from .common import Code, Payload, PayloadBin
 from enum import Enum
 from copy import deepcopy
+from .cache import CacheProvider, SqliteCacheProvider
+from .common import Payload
+from loguru import logger
 
 
 class Task(ABC):
@@ -44,7 +41,7 @@ class Task(ABC):
 def _get_task_params_names(task: Task) -> list[str]:
     # https://stackoverflow.com/a/40363565
     fn = task.run
-    params = fn.__code__.co_varnames[:fn.__code__.co_argcount]
+    params = fn.__code__.co_varnames[: fn.__code__.co_argcount]
 
     ban_set = {"self"}
 
@@ -91,7 +88,6 @@ def serial_run(tasks: list[Task]) -> dict[str, Any]:
 def multiprocess_run(tasks: list[Task]) -> dict[str, Any]:
     d: dict[str, Any] = {}
     with concurrent.futures.ProcessPoolExecutor() as executor:
-
         futures: list[concurrent.futures.Future] = []  # list of executing tasks
         d_future_task: dict[concurrent.futures.Future, Task] = {}
 

@@ -1,14 +1,11 @@
 import tasksflow.task
-from loguru import logger
+import tasksflow.cache
 import asyncio
-import aiohttp
-import uvicorn
-from fastapi import FastAPI
 import pytest
-from aiohttp import web
 import json
 import requests
-import tasksflow.cache
+from aiohttp import web
+from loguru import logger
 
 routes = web.RouteTableDef()
 

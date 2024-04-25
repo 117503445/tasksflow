@@ -1,5 +1,6 @@
 import tasksflow.task
 
+
 class Task1(tasksflow.task.Task):
     def run(self):
         return {"a": 1, "b": 2}
@@ -19,15 +20,17 @@ class Task4(tasksflow.task.Task):
     def run(self, c: int):
         pass
 
+
 def test_case1():
     tasks = [Task1(), Task2(), Task3()]
     p = tasksflow.task.Pool(tasks)
     result = p.run()
     print(f"result: {result}")
 
+
 def main():
     test_case1()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

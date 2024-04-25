@@ -25,6 +25,7 @@ dev-dependencies = [
     "requests>=2.31.0",
     "uvicorn>=0.29.0",
     "types-requests>=2.31.0.20240406",
+    "ruff>=0.4.1",
 ]
 
 [tool.hatch.metadata]

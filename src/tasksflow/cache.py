@@ -8,7 +8,6 @@ from loguru import logger
 
 
 class CacheProvider(ABC):
-
     @abstractmethod
     def get(self, code: Code, params: Payload) -> Optional[Payload]:
         raise NotImplementedError
