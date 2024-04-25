@@ -7,7 +7,7 @@ services:
     volumes:
         - './:/workspace'
         - './scripts/entrypoint:/entrypoint'
-        - tasksflow-dev-vsc:/root/.vscode-server'
+        - tasksflow-dev-vsc:/root/.vscode-server
         - tasksflow-rye-vsc:/root/.rye
     stdin_open: true
     tty: true
