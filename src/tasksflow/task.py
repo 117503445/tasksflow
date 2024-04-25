@@ -33,6 +33,7 @@ class Task(ABC):
                 return cache_output
 
             logger.debug(f"cache miss for task {self}")
+            logger.debug(f"execute task {self}, args: {args}, kwargs: {kwargs}")
             output = self.run(*args, **kwargs)
             if output is None:
                 output = {}
@@ -41,7 +42,9 @@ class Task(ABC):
 
 
 def _get_task_params_names(task: Task) -> list[str]:
-    params = task.run.__code__.co_varnames
+    # https://stackoverflow.com/a/40363565
+    fn = task.run
+    params = fn.__code__.co_varnames[:fn.__code__.co_argcount]
 
     ban_set = {"self"}
 
