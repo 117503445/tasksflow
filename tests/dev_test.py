@@ -38,7 +38,7 @@ def test_case1():
 def test_case2():
     logger.debug("test_case2 start")
     tasks = [Task1(), Task2(), Task3(), Task4()]
-    p = tasksflow.task.Pool(tasks, run_func=tasksflow.task.multiprocess_run)
+    p = tasksflow.task.Pool(tasks, executer=tasksflow.task.multiprocess_run)
     # p = tasksflow.task.Pool(tasks)
     result = p.run()
 

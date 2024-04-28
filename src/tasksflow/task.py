@@ -19,6 +19,9 @@ class Task(ABC):
         raise NotImplementedError
 
     def _execute(self, *args, **kwargs):
+        """
+        execute the task, if cache_provider is not None, cache the result
+        """
         logger.debug(f"execute task {self}, args: {args}, kwargs: {kwargs}")
         if self.cache_provider is None:
             return self.run(*args, **kwargs)
@@ -60,10 +63,16 @@ def _is_payload_valid(payload: Payload) -> bool:
     return True
 
 
-def serial_run(tasks: list[Task]) -> dict[str, Any]:
-    d_payload: dict[str, Any] = {}
+def serial_run(tasks: list[Task]) -> Payload:
+    """
+    serially execute tasks
+
+    :param tasks: list of tasks
+    """
+    d_payload: Payload = {}
     for task in tasks:
-        task_params = {}
+        # try to get all the parameters for the task
+        task_params: Payload = {}
         for param in _get_task_params_names(task):
             if param in d_payload:
                 task_params[param] = d_payload[param]
@@ -72,6 +81,7 @@ def serial_run(tasks: list[Task]) -> dict[str, Any]:
 
         result = task._execute(**task_params)
         if result is not None:
+            # result should be valid payload
             if not _is_payload_valid(result):
                 raise ValueError(
                     f"Task result must be a dict[str, Any] or None, but get {result} for task {task}"
@@ -85,11 +95,17 @@ def serial_run(tasks: list[Task]) -> dict[str, Any]:
     return d_payload
 
 
-def multiprocess_run(tasks: list[Task]) -> dict[str, Any]:
-    d: dict[str, Any] = {}
+def multiprocess_run(tasks: list[Task]) -> Payload:
+    """
+    Execute tasks in parallel using multiprocessing
+
+    :param tasks: list of tasks
+    """
+
+    d_payload: Payload = {}  # param -> value
     with concurrent.futures.ProcessPoolExecutor() as executor:
         futures: list[concurrent.futures.Future] = []  # list of executing tasks
-        d_future_task: dict[concurrent.futures.Future, Task] = {}
+        d_future_task: dict[concurrent.futures.Future, Task] = {}  # future -> task
 
         class TaskStatus(Enum):
             NOT_STARTED = 0
@@ -99,8 +115,13 @@ def multiprocess_run(tasks: list[Task]) -> dict[str, Any]:
         d_task_status = {t: TaskStatus.NOT_STARTED for t in tasks}
 
         def is_task_prepared(task: Task):
+            """
+            Check if the task is ready to be executed
+            """
+
+            # if all the parameters are ready, then the task is ready
             for param in _get_task_params_names(task):
-                if param not in d:
+                if param not in d_payload:
                     return False
             return True
 
@@ -128,7 +149,7 @@ def multiprocess_run(tasks: list[Task]) -> dict[str, Any]:
                     raise ValueError(
                         f"Task result must be a dict[str, Any] or None, but get {result} for task {task}"
                     )
-                d.update(result)
+                d_payload.update(result)
 
             t = d_future_task[future]
             d_task_status[t] = TaskStatus.DONE
@@ -139,7 +160,7 @@ def multiprocess_run(tasks: list[Task]) -> dict[str, Any]:
                 if is_task_prepared(task):
                     task_params = {}
                     for param in _get_task_params_names(task):
-                        task_params[param] = d[param]
+                        task_params[param] = d_payload[param]
 
                     future = executor.submit(task._execute, **task_params)
                     d_task_status[task] = TaskStatus.RUNNING
@@ -147,7 +168,7 @@ def multiprocess_run(tasks: list[Task]) -> dict[str, Any]:
                     d_future_task[future] = task
                     logger.debug(f"submit task {task} by {t}")
 
-    return d
+    return d_payload
 
 
 class Pool:
@@ -155,8 +176,16 @@ class Pool:
         self,
         tasks: list[Task],
         cache_provider: Optional[CacheProvider] = None,
-        run_func: Callable[[list[Task]], Payload] = serial_run,
+        executer: Callable[[list[Task]], Payload] = serial_run,
     ):
+        """
+        Pool of tasks
+
+        :param tasks: list of tasks
+        :param cache_provider: cache task execution result to avoid re-execution for the same input
+        :param executer: function to execute tasks
+        """
+
         # use deepcopy to prevent tasks from being modified
         self.tasks = deepcopy(tasks)
 
@@ -168,7 +197,10 @@ class Pool:
         for task in self.tasks:
             task.cache_provider = self.cache_provider
 
-        self.run_func = run_func
+        self.executer = executer
 
     def run(self):
-        return self.run_func(self.tasks)
+        """
+        Execute the tasks in the pool
+        """
+        return self.executer(self.tasks)
