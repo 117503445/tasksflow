@@ -11,11 +11,19 @@ from loguru import logger
 
 class Task(ABC):
     def __init__(self, enable_cache: bool = True):
+        '''
+        Task is the base class for all tasks
+
+        :param enable_cache: whether to enable cache for the task
+        '''
         self.enable_cache = enable_cache
         self.cache_provider: Optional[CacheProvider] = None
 
     @abstractmethod
-    def run(self, *args, **kwargs) -> dict[str, Any]:
+    def run(self, *args, **kwargs) -> Optional[Payload]:
+        '''
+        user-defined task logic, should return a dict[str, Any] or None
+        '''
         raise NotImplementedError
 
     def _execute(self, *args, **kwargs):
@@ -125,39 +133,16 @@ def multiprocess_run(tasks: list[Task]) -> Payload:
                     return False
             return True
 
-        for task in tasks:
-            if is_task_prepared(task):
-                future = executor.submit(task._execute)
-                d_task_status[task] = TaskStatus.RUNNING
-                futures.append(future)
-                d_future_task[future] = task
-                logger.debug(f"submit task {task} in first round")
+        def _submit_prepared_tasks(pre_task: Optional[Task] = None):
+            """
+            submit tasks that are prepared
 
-        while futures:
-            # get the task that is done
-            def wait_until_any(futures: list[concurrent.futures.Future]):
-                for f in concurrent.futures.as_completed(futures):
-                    return f
-                raise ValueError("No task is done")
-
-            future = wait_until_any(futures)
-            futures.remove(future)
-
-            result = future.result()
-            if result is not None:
-                if not _is_payload_valid(result):
-                    raise ValueError(
-                        f"Task result must be a dict[str, Any] or None, but get {result} for task {task}"
-                    )
-                d_payload.update(result)
-
-            t = d_future_task[future]
-            d_task_status[t] = TaskStatus.DONE
-
+            :param pre_task: the task that triggers the submission
+            """
             for task in tasks:
-                if d_task_status[task] != TaskStatus.NOT_STARTED:
-                    continue
-                if is_task_prepared(task):
+                if d_task_status[task] == TaskStatus.NOT_STARTED and is_task_prepared(
+                    task
+                ):
                     task_params = {}
                     for param in _get_task_params_names(task):
                         task_params[param] = d_payload[param]
@@ -166,7 +151,33 @@ def multiprocess_run(tasks: list[Task]) -> Payload:
                     d_task_status[task] = TaskStatus.RUNNING
                     futures.append(future)
                     d_future_task[future] = task
-                    logger.debug(f"submit task {task} by {t}")
+                    if pre_task is not None:
+                        logger.debug(f"submit task {task} by {pre_task}")
+                    else:
+                        logger.debug(f"submit task {task}")
+
+        # get the task that is done
+        def wait_until_any(futures: list[concurrent.futures.Future]):
+            for f in concurrent.futures.as_completed(futures):
+                return f
+            raise ValueError("No task is done")
+
+        _submit_prepared_tasks()
+        while futures:
+            future = wait_until_any(futures)
+            futures.remove(future)
+
+            result = future.result()
+            task = d_future_task[future]
+            d_task_status[task] = TaskStatus.DONE
+            if result is not None:
+                if not _is_payload_valid(result):
+                    raise ValueError(
+                        f"Task result must be a dict[str, Any] or None, but get {result} for task {task}"
+                    )
+                d_payload.update(result)
+
+            _submit_prepared_tasks(task)
 
     return d_payload
 

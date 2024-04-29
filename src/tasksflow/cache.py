@@ -10,14 +10,32 @@ from loguru import logger
 class CacheProvider(ABC):
     @abstractmethod
     def get(self, code: Code, params: Payload) -> Optional[Payload]:
+        '''
+        get result for code and params from cache, return None if not found
+
+        :param code: the code of the task
+        :param params: the params of the task
+        '''
         raise NotImplementedError
 
     @abstractmethod
     def set(self, code: Code, params: Payload, result: Payload):
+        '''
+        set result cache for code and params
+
+        :param code: the code of the task
+        :param params: the params of the task
+        :param result: the result of the task
+        '''
         raise NotImplementedError
 
     @abstractmethod
     def clear(self, remain_records: int = 0):
+        '''
+        clear cache, if remain_records is 0, clear all cache records
+
+        :param remain_records: the number of records to remain
+        '''
         raise NotImplementedError
 
     def _check_valid(self) -> bool:
