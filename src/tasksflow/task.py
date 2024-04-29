@@ -11,19 +11,19 @@ from loguru import logger
 
 class Task(ABC):
     def __init__(self, enable_cache: bool = True):
-        '''
+        """
         Task is the base class for all tasks
 
         :param enable_cache: whether to enable cache for the task
-        '''
+        """
         self.enable_cache = enable_cache
         self.cache_provider: Optional[CacheProvider] = None
 
     @abstractmethod
     def run(self, *args, **kwargs) -> Optional[Payload]:
-        '''
+        """
         user-defined task logic, should return a dict[str, Any] or None
-        '''
+        """
         raise NotImplementedError
 
     def _execute(self, *args, **kwargs):
@@ -203,6 +203,10 @@ class Pool:
         if cache_provider is None:
             cache_provider = SqliteCacheProvider()
             # cache_provider = MemoryCacheProvider()
+        if not cache_provider._check_valid():
+            raise ValueError(
+                "Cache provider is not valid, please ensure cache_provider._check_valid() returns True"
+            )
         self.cache_provider = cache_provider
 
         for task in self.tasks:

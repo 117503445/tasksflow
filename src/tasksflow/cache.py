@@ -39,6 +39,9 @@ class CacheProvider(ABC):
         raise NotImplementedError
 
     def _check_valid(self) -> bool:
+        '''
+        check if the cache provider is valid
+        '''
         result = {"c": 3}
         self.set("task1", {"a": 1, "b": 2}, result)
         cache_result = self.get("task1", {"a": 1, "b": 2})

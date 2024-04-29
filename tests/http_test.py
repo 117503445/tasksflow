@@ -74,7 +74,11 @@ async def test_http():
 
     def _run():
         result = p.run()
-        logger.debug(f"result: {result}")
+        # logger.debug(f"result: {result}")
+        assert result == {
+            "items_list_resp": list(db_items.keys()),
+            "descriptions": [db_items[1]["description"], db_items[2]["description"]],
+        }
         stop_event.set()
 
     loop.run_in_executor(None, _run)
