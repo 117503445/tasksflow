@@ -21,24 +21,24 @@ def heavy_cpu_work(t: float):
 
 class Task1(tasksflow.task.Task):
     def run(self):
-        heavy_cpu_work(0.1)
+        heavy_cpu_work(0.5)
         return {"a": 1, "b": 2}
 
 
 class Task2(tasksflow.task.Task):
     def run(self, a: int, b: int):
-        heavy_cpu_work(0.1)
+        heavy_cpu_work(0.5)
         return {"c": a + b}
 
 
 class Task3(tasksflow.task.Task):
     def run(self, c: int):
-        heavy_cpu_work(0.1)
+        heavy_cpu_work(2)
 
 
 class Task4(tasksflow.task.Task):
     def run(self, c: int):
-        heavy_cpu_work(0.1)
+        heavy_cpu_work(2)
 
 
 def test_multiprocess_run_speedup():
@@ -61,7 +61,7 @@ def test_multiprocess_run_speedup():
     serial_time = time.time() - start
 
     assert result == {"a": 1, "b": 2, "c": 3}
-    assert serial_time > 0.4
+    assert serial_time > 5
 
     p = tasksflow.pool.Pool(
         tasks,
@@ -74,4 +74,4 @@ def test_multiprocess_run_speedup():
     multiprocess_time = time.time() - start
 
     assert result == {"a": 1, "b": 2, "c": 3}
-    assert multiprocess_time < 0.4
+    assert multiprocess_time < 4 # 0.5 + 0.5 + 2 = 3

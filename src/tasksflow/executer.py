@@ -4,6 +4,7 @@ from loguru import logger
 import concurrent.futures
 from enum import Enum
 from typing import Any, Optional, Callable
+import multiprocessing
 
 
 def _get_task_params_names(task: Task) -> list[str]:
@@ -26,6 +27,7 @@ def _is_payload_valid(payload: Payload) -> bool:
     if not all(isinstance(k, str) for k in payload.keys()):
         return False
     return True
+
 
 def serial_run(tasks: list[Task]) -> Payload:
     """
@@ -67,7 +69,8 @@ def multiprocess_run(tasks: list[Task]) -> Payload:
     """
 
     d_payload: Payload = {}  # param -> value
-    with concurrent.futures.ProcessPoolExecutor() as executor:
+    ctx = multiprocessing.get_context("spawn") # https://docs.python.org/3/whatsnew/3.12.html#:~:text=101588%20%E4%B8%AD%E8%B4%A1%E7%8C%AE%E3%80%82%EF%BC%89-,multiprocessing,-%3A%20In%20Python%203.14
+    with concurrent.futures.ProcessPoolExecutor(mp_context=ctx) as executor:
         futures: list[concurrent.futures.Future] = []  # list of executing tasks
         d_future_task: dict[concurrent.futures.Future, Task] = {}  # future -> task
 
