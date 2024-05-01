@@ -20,9 +20,9 @@ jobs:
 
       - run: docker compose up -d
 
-      - run: docker exec tasksflow rye sync
+      - run: docker exec tasksflow-dev rye sync
 
-      - run: docker exec tasksflow rye build
+      - run: docker exec tasksflow-dev rye build
 
       - name: Publish distribution 📦 to PyPI
         uses: pypa/gh-action-pypi-publish@master
