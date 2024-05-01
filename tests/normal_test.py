@@ -1,4 +1,6 @@
 import tasksflow.cache
+import tasksflow.executer
+import tasksflow.pool
 import tasksflow.task
 from loguru import logger
 
@@ -27,9 +29,9 @@ class Task4(tasksflow.task.Task):
 
 def test_serial_run():
     tasks = [Task1(), Task2(), Task3(), Task4()]
-    p = tasksflow.task.Pool(
+    p = tasksflow.pool.Pool(
         tasks,
-        executer=tasksflow.task.serial_run,
+        executer=tasksflow.executer.serial_run,
         cache_provider=tasksflow.cache.MemoryCacheProvider(),
     )
     result = p.run()
@@ -39,9 +41,9 @@ def test_serial_run():
 
 def test_multiprocess_run():
     tasks = [Task1(), Task2(), Task3(), Task4()]
-    p = tasksflow.task.Pool(
+    p = tasksflow.pool.Pool(
         tasks,
-        executer=tasksflow.task.multiprocess_run,
+        executer=tasksflow.executer.multiprocess_run,
         cache_provider=tasksflow.cache.MemoryCacheProvider(),
     )
     result = p.run()

@@ -1,3 +1,4 @@
+import tasksflow.pool
 import tasksflow.task
 import tasksflow.cache
 import asyncio
@@ -67,7 +68,7 @@ async def test_http():
     site = web.TCPSite(runner, "0.0.0.0", 18080)
     await site.start()
 
-    p = tasksflow.task.Pool(
+    p = tasksflow.pool.Pool(
         [Task1(), Task2()], cache_provider=tasksflow.cache.MemoryCacheProvider()
     )
     loop = asyncio.get_running_loop()
