@@ -1,9 +1,6 @@
-name: publish-to-pypi
+name: test
 
-on:
-  push:
-    branches:
-      - master
+on: push
 
 jobs:
   build:
@@ -22,9 +19,4 @@ jobs:
 
       - run: docker exec tasksflow-dev rye sync
 
-      - run: docker exec tasksflow-dev rye build
-
-      - name: Publish distribution 📦 to PyPI
-        uses: pypa/gh-action-pypi-publish@master
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
+      - run: docker exec tasksflow-dev rye test -- -s

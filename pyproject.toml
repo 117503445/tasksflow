@@ -2,12 +2,8 @@
 name = "tasksflow"
 version = "0.1.0"
 description = "Supporting complex processes through tasks"
-authors = [
-    { name = "117503445", email = "t117503445@gmail.com" }
-]
-dependencies = [
-    "loguru>=0.7.2",
-]
+authors = [{ name = "117503445", email = "t117503445@gmail.com" }]
+dependencies = ["loguru>=0.7.2"]
 readme = "README.md"
 requires-python = ">= 3.12"
 
@@ -19,6 +15,13 @@ build-backend = "hatchling.build"
 managed = true
 dev-dependencies = [
     "pytest>=8.1.1",
+    "aiohttp>=3.9.5",
+    "pytest-asyncio>=0.23.6",
+    "fastapi>=0.110.2",
+    "requests>=2.31.0",
+    "uvicorn>=0.29.0",
+    "types-requests>=2.31.0.20240406",
+    "ruff>=0.4.1",
 ]
 
 [tool.hatch.metadata]
@@ -28,9 +31,4 @@ allow-direct-references = true
 packages = ["src/tasksflow"]
 
 [tool.hatch.build]
-exclude = [
-    ".vscode",
-    ".gitignore",
-    "docker-compose.yml",
-    "Dockerfile.dev",
-]
+exclude = [".vscode", ".gitignore", "docker-compose.yml", "Dockerfile.dev"]
