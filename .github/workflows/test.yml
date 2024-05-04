@@ -20,6 +20,8 @@ jobs:
 
       - run: docker build -t tasksflow-ci -f Dockerfile.ci .
 
+      - run: docker run -it -d --name tasksflow-ci tasksflow-ci
+
       - run: docker exec tasksflow-ci rye sync
 
       - run: docker exec tasksflow-ci rye test -- -s

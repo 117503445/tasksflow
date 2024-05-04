@@ -1,3 +1,7 @@
 FROM debian
 
-RUN curl -sSf https://rye-up.com/get | bash
+RUN apt-get update && apt-get install -y curl
+
+RUN curl -sSf https://rye-up.com/get | RYE_INSTALL_OPTION="--yes" bash
+
+ENTRYPOINT [ "bash" ]
