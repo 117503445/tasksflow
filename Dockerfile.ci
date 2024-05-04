@@ -1,7 +1,7 @@
 FROM debian
 
 RUN apt-get update && apt-get install -y curl
-
+ENV PATH=/root/.rye/shims:$PATH
 RUN curl -sSf https://rye-up.com/get | RYE_INSTALL_OPTION="--yes" bash
 
 ENTRYPOINT [ "bash" ]
