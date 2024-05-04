@@ -1,7 +1,7 @@
 [project]
 name = "tasksflow"
-version = "0.2.1"
-description = "Supporting complex processes through tasks"
+version = "0.2.2"
+description = "Handling Complex Workflows with Tasks"
 authors = [{ name = "117503445", email = "t117503445@gmail.com" }]
 dependencies = ["loguru>=0.7.2"]
 readme = "README.md"

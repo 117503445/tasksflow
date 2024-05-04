@@ -6,7 +6,7 @@
 
 ## 快速开始
 
-安装 tasksflow：
+安装 tasksflow
 
 ```bash
 pip install tasksflow
@@ -15,7 +15,11 @@ pip install tasksflow
 创建一些简单的任务
 
 ```python
+import tasksflow.pool
 import tasksflow.task
+import tasksflow.cache
+import tasksflow.executer
+from pathlib import Path
 
 class Task1(tasksflow.task.Task):
     def run(self):
@@ -82,13 +86,14 @@ tasks = [Task1(), Task2(enable_cache = False)]
 `pool` 默认会在 `cache.db` 创建 Sqlite 数据库并缓存任务代码和输入。如果要自定义储存路径，可以
 
 ```python
-p = tasksflow.pool.Pool(tasks, CacheProvider=tasksflow.cache.SqliteCacheProvider("mycache.db"))
+from pathlib import Path
+p = tasksflow.pool.Pool(tasks, cache_provider=tasksflow.cache.SqliteCacheProvider(Path("mycache.db")))
 ```
 
 也可以使用 `MemoryCacheProvider` 代替 `SqliteCacheProvider`，将缓存保存在内存中，常用于测试。
 
 ```python
-p = tasksflow.pool.Pool(tasks, CacheProvider=tasksflow.cache.MemoryCacheProvider())
+p = tasksflow.pool.Pool(tasks, cache_provider=tasksflow.cache.MemoryCacheProvider())
 ```
 
 或者自定义 `CacheProvider`，继承 `tasksflow.cache.CacheProvider` 并实现 `get` 和 `set` 方法。然后将自定义的 `CacheProvider` 传入 `Pool`。
@@ -106,7 +111,8 @@ p = tasksflow.pool.Pool(tasks, executer=tasksflow.executer.serial_run)
 也可以自定义执行器
 
 ```python
-def my_executer(tasks: list[Task]) -> Dict[str, Any]:
+from typing import Any
+def my_executer(tasks: list[tasksflow.task.Task]) -> dict[str, Any]:
     pass
 p = tasksflow.pool.Pool(tasks, executer=my_executer)
 ```
