@@ -1,3 +1,4 @@
+import tasksflow.pool
 import tasksflow.task
 
 
@@ -23,7 +24,7 @@ class Task4(tasksflow.task.Task):
 
 def test_case1():
     tasks = [Task1(), Task2(), Task3()]
-    p = tasksflow.task.Pool(tasks)
+    p = tasksflow.pool.Pool(tasks)
     result = p.run()
     print(f"result: {result}")
 
