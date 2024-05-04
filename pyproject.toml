@@ -1,6 +1,6 @@
 [project]
 name = "tasksflow"
-version = "0.2.0"
+version = "0.2.1"
 description = "Supporting complex processes through tasks"
 authors = [{ name = "117503445", email = "t117503445@gmail.com" }]
 dependencies = ["loguru>=0.7.2"]
