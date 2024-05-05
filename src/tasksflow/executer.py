@@ -15,7 +15,7 @@ def _get_task_params_names(task: Task) -> list[str]:
     ban_set = {"self"}
 
     names = [param for param in params if param not in ban_set]
-    logger.debug(f"task {task} params: {names}")
+    # logger.debug(f"task {task} params: {names}")
     return names
 
 
