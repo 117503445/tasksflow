@@ -32,6 +32,7 @@ class Task(ABC):
         if self.cache_provider is None:
             return self.run(*args, **kwargs)
         else:
+            logger.debug(f"cache provider: {self.cache_provider}")
             task_code = inspect.getsource(self.__class__)
             if not kwargs:
                 kwargs = {}

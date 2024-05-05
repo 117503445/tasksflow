@@ -6,6 +6,7 @@ from .cache import CacheProvider, SqliteCacheProvider
 from .executer import multiprocess_run
 from copy import deepcopy
 
+
 class Pool:
     def __init__(
         self,
@@ -27,14 +28,13 @@ class Pool:
         if cache_provider is None:
             cache_provider = SqliteCacheProvider()
             # cache_provider = MemoryCacheProvider()
-        if not cache_provider._check_valid():
-            raise ValueError(
-                "Cache provider is not valid, please ensure cache_provider._check_valid() returns True"
-            )
-        self.cache_provider = cache_provider
+        # if not cache_provider._check_valid():
+        #     raise ValueError(
+        #         "Cache provider is not valid, please ensure cache_provider._check_valid() returns True"
+        #     )
 
         for task in self.tasks:
-            task.cache_provider = self.cache_provider
+            task.cache_provider = cache_provider
 
         self.executer = executer
 
