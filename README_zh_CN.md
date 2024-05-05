@@ -2,6 +2,8 @@
 
 > 通过 tasks 处理复杂流程
 
+[English](./README.md) | 简体中文
+
 在处理复杂流程时，我们通常需要将流程分解为多个任务，然后将这些任务组合在一起。这个库提供了一种简单的方法来定义和执行这些任务。
 
 ## 快速开始
@@ -116,3 +118,18 @@ def my_executer(tasks: list[tasksflow.task.Task]) -> dict[str, Any]:
     pass
 p = tasksflow.pool.Pool(tasks, executer=my_executer)
 ```
+
+### 日志
+
+`tasksflow` 使用 `loguru` 模块打印日志，可以通过以下代码设置是否打印 `tasksflow` 的日志。默认情况下，`tasksflow` 的日志是关闭的。
+
+```python
+# install loguru by `pip install loguru`
+
+from loguru import logger
+logger.enable("tasksflow")
+```
+
+## 开发
+
+见 [dev_zh_CN.md](./docs/dev_zh_CN.md)

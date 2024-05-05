@@ -22,15 +22,12 @@ class Task4(tasksflow.task.Task):
         pass
 
 
-def test_case1():
-    tasks = [Task1(), Task2(), Task3()]
+
+def main():
+    tasks = [Task1(), Task2(), Task3(), Task4()]
     p = tasksflow.pool.Pool(tasks)
     result = p.run()
     print(f"result: {result}")
-
-
-def main():
-    test_case1()
 
 
 if __name__ == "__main__":

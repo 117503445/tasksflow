@@ -33,13 +33,14 @@ class Task(ABC):
             return self.run(*args, **kwargs)
         else:
             task_code = inspect.getsource(self.__class__)
+            if not kwargs:
+                kwargs = {}
             cache_output = self.cache_provider.get(task_code, kwargs)
             if cache_output is not None:
                 logger.debug(f"cache hit for task {self}")
                 return cache_output
 
             logger.debug(f"cache miss for task {self}")
-            logger.debug(f"execute task {self}, args: {args}, kwargs: {kwargs}")
             output = self.run(*args, **kwargs)
             if output is None:
                 output = {}

@@ -43,14 +43,14 @@ class CacheProvider(ABC):
         check if the cache provider is valid
         '''
         result = {"c": 3}
-        self.set("task1", {"a": 1, "b": 2}, result)
-        cache_result = self.get("task1", {"a": 1, "b": 2})
+        self.set("tasktest", {"a": 1, "b": 2}, result)
+        cache_result = self.get("tasktest", {"a": 1, "b": 2})
         if cache_result is None:
             return False
         if cache_result != result:
             return False
         self.clear()
-        cache_result = self.get("task1", {"a": 1, "b": 2})
+        cache_result = self.get("tasktest", {"a": 1, "b": 2})
         return cache_result is None
 
 
