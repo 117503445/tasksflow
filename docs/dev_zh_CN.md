@@ -19,4 +19,5 @@ rye build # 构建 wheel 包
 mypy --python-executable .venv/bin/python . # 使用 mypy 进行检查
 /workspace/.venv/bin/ruff check # 使用 ruff 进行代码检查
 /workspace/.venv/bin/ruff format # 使用 ruff 进行代码格式化
+/workspace/.venv/bin/python /workspace/scripts/release.py
 ```
