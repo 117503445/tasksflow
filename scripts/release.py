@@ -30,8 +30,16 @@ def main():
     # git checkout master
     subprocess.run(["git", "checkout", "master"], cwd=dir_project, check=True)
 
-    # git me
-    
+    # git merge dev -m "merge dev"
+    subprocess.run(
+        ["git", "merge", "dev", "-m", "merge dev"], cwd=dir_project, check=True
+    )
+
+    # git push
+    subprocess.run(["git", "push"], cwd=dir_project, check=True)
+
+    # git checkout dev
+    subprocess.run(["git", "checkout", "dev"], cwd=dir_project, check=True)
 
 
 if __name__ == "__main__":
