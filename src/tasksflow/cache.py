@@ -7,6 +7,10 @@ from .common import Code, Payload, PayloadBin
 
 
 class CacheProvider(ABC):
+    '''
+    Abstract class for cache provider
+    '''
+
     @abstractmethod
     def get(self, code: Code, params: Payload) -> Optional[Payload]:
         """
@@ -61,6 +65,10 @@ class CacheProvider(ABC):
 
 
 class MemoryCacheProvider(CacheProvider):
+    """
+    MemoryCacheProvider is a simple in-memory cache provider
+    """
+
     def __init__(self: "MemoryCacheProvider"):
         self.d: dict[tuple[Code, PayloadBin], Payload] = {}
 
@@ -85,7 +93,14 @@ class MemoryCacheProvider(CacheProvider):
 
 
 class SqliteCacheProvider(CacheProvider):
+    """
+    SqliteCacheProvider is a sqlite cache provider
+    """
+
     def __init__(self, db_path: Optional[Path] = None):
+        """
+        :param db_path: the path of the sqlite db file
+        """
         if db_path is None:
             db_path = Path("cache.db")
         self.db_path = db_path
