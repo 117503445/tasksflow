@@ -17,7 +17,7 @@ class Pool:
 
         :param tasks: list of tasks
         :param cache_provider: cache task execution result to avoid re-execution for the same input
-        :param executer: function to execute tasks
+        :param executer: execute the tasks in the pool
         """
 
         # use deepcopy to prevent tasks from being modified

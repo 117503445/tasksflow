@@ -4,7 +4,7 @@ import tasksflow.cache
 
 from loguru import logger
 
-logger.enable("tasksflow")
+# logger.enable("tasksflow")
 
 
 class Task1(tasksflow.task.Task):

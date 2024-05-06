@@ -102,21 +102,22 @@ p = tasksflow.pool.Pool(tasks, cache_provider=tasksflow.cache.MemoryCacheProvide
 
 ### executer
 
-`pool` 默认使用 `tasksflow.executer.multiprocess_run`，即为每个任务创建单独的进程。当一个任务被完成后，会根据此任务的输出，自动调用依赖此任务的后置任务。
+`pool` 默认使用 `tasksflow.executer.MultiprocessExecuter`，即为每个任务创建单独的进程。当一个任务被完成后，会根据此任务的输出，自动调用依赖此任务的后置任务。
 
-也可以使用 `tasksflow.executer.serial_run`，按照 tasks 的顺序依次执行任务。
+也可以使用 `tasksflow.executer.SerialExecuter`，按照 tasks 的顺序依次执行任务。
 
 ```python
-p = tasksflow.pool.Pool(tasks, executer=tasksflow.executer.serial_run)
+p = tasksflow.pool.Pool(tasks, executer=tasksflow.executer.SerialExecuter())
 ```
 
 也可以自定义执行器
 
 ```python
 from typing import Any
-def my_executer(tasks: list[tasksflow.task.Task]) -> dict[str, Any]:
-    pass
-p = tasksflow.pool.Pool(tasks, executer=my_executer)
+class MyExecuter(Executer):
+    def run(tasks: list[tasksflow.task.Task]) -> dict[str, Any]:
+        pass
+p = tasksflow.pool.Pool(tasks, executer=MyExecuter())
 ```
 
 ### 日志
@@ -128,6 +129,55 @@ p = tasksflow.pool.Pool(tasks, executer=my_executer)
 
 from loguru import logger
 logger.enable("tasksflow")
+```
+
+## 更真实的例子
+
+爬取 <https://webscraper.io/test-sites> 网站的标题。使用 `tasksflow` 将爬取任务分解为 2 个子任务：网页请求、网页解析，从而实现开发 网页解析 子任务时，利用缓存避免了再次请求网页。
+
+安装依赖
+
+```sh
+pip install tasksflow requests lxml
+```
+
+编写代码
+
+```python
+import tasksflow.pool
+import tasksflow.task
+from lxml import etree
+import requests
+
+
+class TaskRequest(tasksflow.task.Task):
+    def run(self):
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        }
+        url = "https://webscraper.io/test-sites"
+        resp = requests.get(url, headers=headers).text
+        return {"resp": resp}
+
+
+class TaskParse(tasksflow.task.Task):
+    def run(self, resp: str):
+        html = etree.HTML(resp, etree.HTMLParser())
+        title_elements = html.xpath("/html/body/div[1]/div[3]/div[*]/div[1]/h2/a")
+        titles = [title.text.strip() for title in title_elements]
+        return {"titles": titles}
+
+
+def main():
+    tasks = [TaskRequest(), TaskParse()]
+    p = tasksflow.pool.Pool(tasks)
+    result = p.run()
+    print(f"titles: {result['titles']}")
+    # titles: ['E-commerce site', 'E-commerce site with pagination links', 'E-commerce site with AJAX pagination links', 'E-commerce site with "Load more" buttons', 'E-commerce site that loads items while scrolling', 'Table playground']
+
+
+if __name__ == "__main__":
+    main()
 ```
 
 ## 开发

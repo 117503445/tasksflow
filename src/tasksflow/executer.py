@@ -24,8 +24,11 @@ def _get_task_params_names(task: Task) -> list[str]:
 
 
 class Executer(ABC):
+    """
+    Abstract class for task execution
+    """
+
     def __init__(self, cache_provider: Optional[CacheProvider] = None):
-        super().__init__()
         self.cache_provider = cache_provider
 
     def _get_task_result_from_cache(
@@ -70,7 +73,7 @@ class SerialExecuter(Executer):
 
         :param tasks: list of tasks
         """
-        d_payload: Payload = {}
+        d_payload: Payload = {}  # param -> value
         for task in tasks:
             # try to get all the parameters for the task
             task_params: Payload = {}
@@ -84,8 +87,11 @@ class SerialExecuter(Executer):
 
             result = self._get_task_result_from_cache(task, task_params)
             if result is None:
+                logger.debug(f"execute task: {task.__class__.__name__}")
                 result = task._execute(**task_params)
                 self._set_task_result_to_cache(task, task_params, result)
+            else:
+                logger.debug(f"cache hit task: {task.__class__.__name__}")
 
             # key should be unique
             if any(k in d_payload for k in result.keys()):
@@ -110,8 +116,13 @@ class MultiprocessExecuter(Executer):
             DONE = 2
 
         class RunableTask:
+            """
+            task with running status
+            """
+
             def __init__(self, task: Task):
                 self.task = task
+
                 self.status = TaskStatus.NOT_STARTED
                 self.future: Optional[concurrent.futures.Future] = None
                 self.task_params: Optional[Payload] = None
@@ -133,17 +144,15 @@ class MultiprocessExecuter(Executer):
             "spawn"
         )  # https://docs.python.org/3/whatsnew/3.12.html#:~:text=101588%20%E4%B8%AD%E8%B4%A1%E7%8C%AE%E3%80%82%EF%BC%89-,multiprocessing,-%3A%20In%20Python%203.14
         with concurrent.futures.ProcessPoolExecutor(mp_context=ctx) as executor:
-            futures: list[concurrent.futures.Future] = []  # list of executing tasks
+            futures: list[concurrent.futures.Future] = []  # executing futures
 
             def _submit_prepared_tasks() -> None:
                 """
                 submit tasks that are prepared in rtasks
-
-                :param pre_task: the task that triggers the submission
                 """
-                cache_prepared_tasks: list[
-                    RunableTask
-                ] = []  # tasks that are prepared by cache
+                cache_prepared_tasks: list[RunableTask] = (
+                    []
+                )  # tasks that are prepared by cache
                 for rtask in rtasks:
                     if rtask.status == TaskStatus.NOT_STARTED and rtask.is_prepared():
                         task_params = {}
@@ -175,6 +184,7 @@ class MultiprocessExecuter(Executer):
                             )
 
                 if cache_prepared_tasks:
+                    # cached tasks maybe prepare for other tasks
                     _submit_prepared_tasks()
 
             # get the task that is done
@@ -201,7 +211,13 @@ class MultiprocessExecuter(Executer):
                 _submit_prepared_tasks()
 
             for rtask in rtasks:
-                if rtask.status != TaskStatus.DONE:
-                    raise ValueError(f"rtask {rtask} is not done")
+                if rtask.status == TaskStatus.NOT_STARTED:
+                    raise ValueError(
+                        f"rtask {rtask} is not started, maybe parameters are not satisfied"
+                    )
+                elif rtask.status == TaskStatus.RUNNING:
+                    raise ValueError(
+                        f"rtask {rtask} is still running, while no futures are running"
+                    )
 
         return d_payload
