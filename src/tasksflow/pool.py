@@ -3,7 +3,7 @@ from .task import Task
 from loguru import logger
 from typing import Any, Optional, Callable
 from .cache import CacheProvider, SqliteCacheProvider
-from .executer import Executer, SerialExecuter
+from .executer import Executer, SerialExecuter, MultiprocessExecuter
 from copy import deepcopy
 
 
@@ -38,7 +38,8 @@ class Pool:
         # for task in self.tasks:
         #     task.cache_provider = cache_provider
         if executer is None:
-            executer = SerialExecuter(cache_provider=cache_provider)
+            # executer = SerialExecuter(cache_provider=cache_provider)
+            executer = MultiprocessExecuter(cache_provider=cache_provider)
         self.executer = executer
 
     def run(self):

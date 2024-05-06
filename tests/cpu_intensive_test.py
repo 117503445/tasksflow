@@ -53,7 +53,7 @@ def test_multiprocess_run_speedup():
     tasks = [Task1(), Task2(), Task3(), Task4()]
     p = tasksflow.pool.Pool(
         tasks,
-        executer=tasksflow.executer.serial_run,
+        executer=tasksflow.executer.SerialExecuter(),
         cache_provider=tasksflow.cache.MemoryCacheProvider(),
     )
     start = time.time()
@@ -65,7 +65,7 @@ def test_multiprocess_run_speedup():
 
     p = tasksflow.pool.Pool(
         tasks,
-        executer=tasksflow.executer.multiprocess_run,
+        executer=tasksflow.executer.MultiprocessExecuter(),
         cache_provider=tasksflow.cache.MemoryCacheProvider(),
     )
 
