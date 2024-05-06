@@ -3,15 +3,16 @@ from .task import Task
 from loguru import logger
 from typing import Any, Optional, Callable
 from .cache import CacheProvider, SqliteCacheProvider
-from .executer import multiprocess_run
+from .executer import Executer, SerialExecuter, MultiprocessExecuter
 from copy import deepcopy
+
 
 class Pool:
     def __init__(
         self,
         tasks: list[Task],
         cache_provider: Optional[CacheProvider] = None,
-        executer: Callable[[list[Task]], Payload] = multiprocess_run,
+        executer: Optional[Executer] = None,
     ):
         """
         Pool of tasks
@@ -27,19 +28,19 @@ class Pool:
         if cache_provider is None:
             cache_provider = SqliteCacheProvider()
             # cache_provider = MemoryCacheProvider()
-        if not cache_provider._check_valid():
-            raise ValueError(
-                "Cache provider is not valid, please ensure cache_provider._check_valid() returns True"
-            )
-        self.cache_provider = cache_provider
 
-        for task in self.tasks:
-            task.cache_provider = self.cache_provider
+        # if not cache_provider._check_valid():
+        #     raise ValueError(
+        #         "Cache provider is not valid, please ensure cache_provider._check_valid() returns True"
+        #     )
 
+        if executer is None:
+            # executer = SerialExecuter(cache_provider=cache_provider)
+            executer = MultiprocessExecuter(cache_provider=cache_provider)
         self.executer = executer
 
     def run(self):
         """
         Execute the tasks in the pool
         """
-        return self.executer(self.tasks)
+        return self.executer.run(self.tasks)
