@@ -28,15 +28,12 @@ class Pool:
         if cache_provider is None:
             cache_provider = SqliteCacheProvider()
             # cache_provider = MemoryCacheProvider()
+
         # if not cache_provider._check_valid():
         #     raise ValueError(
         #         "Cache provider is not valid, please ensure cache_provider._check_valid() returns True"
         #     )
 
-
-
-        # for task in self.tasks:
-        #     task.cache_provider = cache_provider
         if executer is None:
             # executer = SerialExecuter(cache_provider=cache_provider)
             executer = MultiprocessExecuter(cache_provider=cache_provider)
