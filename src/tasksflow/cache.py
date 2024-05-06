@@ -4,7 +4,6 @@ from abc import ABC, abstractmethod
 from typing import Optional
 from pathlib import Path
 from .common import Code, Payload, PayloadBin
-from loguru import logger
 
 
 class CacheProvider(ABC):
@@ -72,11 +71,11 @@ class MemoryCacheProvider(CacheProvider):
     def set(self, code: Code, params: Payload, result: Payload):
         params_bin = pickle.dumps(params)
         self.d[(code, params_bin)] = result
-        logger.debug(f"set cache for code: {code}, params: {params}, result: {result}")
-        logger.debug(f"cache: {self.d}")
+        # logger.debug(f"set cache for code: {code}, params: {params}, result: {result}")
+        # logger.debug(f"cache: {self.d}")
 
     def clear(self, remain_records: int = 0):
-        logger.debug(f"clear cache, remain_records: {remain_records}")
+        # logger.debug(f"clear cache, remain_records: {remain_records}")
         if remain_records < 0:
             raise ValueError("remain_records must be greater than or equal to 0")
         if remain_records == 0:
@@ -118,14 +117,14 @@ class SqliteCacheProvider(CacheProvider):
                 (code, params_bin),
             )
             record = c.fetchone()
-            logger.debug(f"record: {record}")
+            # logger.debug(f"record: {record}")
             if record is None:
                 return None
             result = pickle.loads(record[0])
             return result
 
     def set(self, code: str, params: Payload, result: Payload):
-        logger.debug(f"set cache for code: {code}, params: {params}, result: {result}")
+        # logger.debug(f"set cache for code: {code}, params: {params}, result: {result}")
         self._create_db()
 
         params_bin = pickle.dumps(params)

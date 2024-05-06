@@ -5,7 +5,7 @@ from .cache import CacheProvider
 from loguru import logger
 import concurrent.futures
 from enum import Enum
-from typing import Any, Optional, Callable
+from typing import Optional
 import multiprocessing
 from abc import ABC, abstractmethod
 import inspect
@@ -135,15 +135,15 @@ class MultiprocessExecuter(Executer):
         with concurrent.futures.ProcessPoolExecutor(mp_context=ctx) as executor:
             futures: list[concurrent.futures.Future] = []  # list of executing tasks
 
-            def _submit_prepared_tasks(pre_task: Optional[RunableTask] = None):
+            def _submit_prepared_tasks() -> None:
                 """
                 submit tasks that are prepared in rtasks
 
                 :param pre_task: the task that triggers the submission
                 """
-                cache_prepared_tasks: list[RunableTask] = (
-                    []
-                )  # tasks that are prepared by cache, can be finished without waiting
+                cache_prepared_tasks: list[
+                    RunableTask
+                ] = []  # tasks that are prepared by cache
                 for rtask in rtasks:
                     if rtask.status == TaskStatus.NOT_STARTED and rtask.is_prepared():
                         task_params = {}
@@ -160,19 +160,22 @@ class MultiprocessExecuter(Executer):
                             d_payload.update(result)
                             rtask.status = TaskStatus.DONE
                             cache_prepared_tasks.append(rtask)
+
+                            logger.debug(
+                                f"cache hit task: {rtask.task.__class__.__name__}"
+                            )
                         else:
                             rtask.status = TaskStatus.RUNNING
                             future = executor.submit(rtask.task._execute, **task_params)
                             futures.append(future)
                             rtask.future = future
 
-                        if pre_task is not None:
-                            logger.debug(f"submit task {rtask} by {pre_task.task}")
-                        else:
-                            logger.debug(f"submit task {rtask}")
+                            logger.debug(
+                                f"submit task: {rtask.task.__class__.__name__}"
+                            )
 
-                for rtask in cache_prepared_tasks:
-                    _submit_prepared_tasks(rtask)
+                if cache_prepared_tasks:
+                    _submit_prepared_tasks()
 
             # get the task that is done
             def wait_until_any(futures: list[concurrent.futures.Future]):
@@ -186,14 +189,16 @@ class MultiprocessExecuter(Executer):
                 futures.remove(future)
 
                 result = future.result()
-                rtask = next(rtask for rtask in rtasks if rtask.future == future) # find rtask by future
+                rtask = next(
+                    rtask for rtask in rtasks if rtask.future == future
+                )  # find rtask by future
                 if rtask.task_params is None:
                     raise ValueError(f"rtask {rtask} task_params should not be None")
                 self._set_task_result_to_cache(rtask.task, rtask.task_params, result)
                 rtask.status = TaskStatus.DONE
                 d_payload.update(result)
 
-                _submit_prepared_tasks(rtask)
+                _submit_prepared_tasks()
 
             for rtask in rtasks:
                 if rtask.status != TaskStatus.DONE:

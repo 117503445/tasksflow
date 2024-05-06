@@ -6,7 +6,6 @@ import pytest
 import json
 import requests
 from aiohttp import web
-from loguru import logger
 
 routes = web.RouteTableDef()
 
