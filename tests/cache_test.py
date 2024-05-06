@@ -7,7 +7,7 @@ from loguru import logger
 logger.enable("tasksflow")
 
 
-def test_provider_valid():
+def test_provider_valid() -> None:
     sqlite_cache_provider = tasksflow.cache.SqliteCacheProvider(Path("test.db"))
 
     cache_providers: list[tasksflow.cache.CacheProvider] = [

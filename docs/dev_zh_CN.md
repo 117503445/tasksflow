@@ -16,8 +16,8 @@ rye test -- --cov # 运行测试并打印测试覆盖率
 rye test -- -s # 运行测试并打印日志
 rye test -- -s ./tests/cache_test.py::test_cache_work # 运行单独测试并打印日志
 rye build # 构建 wheel 包
-mypy --python-executable .venv/bin/python . # 使用 mypy 进行检查
-/workspace/.venv/bin/ruff check # 使用 ruff 进行代码检查
+mypy --python-executable .venv/bin/python --exclude docs . # 使用 mypy 进行检查
+/workspace/.venv/bin/ruff check --fix # 使用 ruff 进行代码检查并自动修复
 /workspace/.venv/bin/ruff format # 使用 ruff 进行代码格式化
-/workspace/.venv/bin/python /workspace/scripts/release.py
+/workspace/.venv/bin/python /workspace/scripts/release.py # 发布新版本
 ```

@@ -74,4 +74,4 @@ def test_multiprocess_run_speedup():
     multiprocess_time = time.time() - start
 
     assert result == {"a": 1, "b": 2, "c": 3}
-    assert multiprocess_time < 4 # 0.5 + 0.5 + 2 = 3
+    assert multiprocess_time < 4  # 0.5 + 0.5 + 2 = 3

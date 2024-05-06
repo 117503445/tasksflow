@@ -71,8 +71,9 @@ def test_multiprocess_run_with_un_given():
     try:
         p.run()
         raise Exception("Should raise an exception when Task5 not executed")
-    except Exception as e:
+    except Exception:
         pass
+
 
 def test_multiprocess_run_with_cache():
     memory_cache_provider = tasksflow.cache.MemoryCacheProvider()
