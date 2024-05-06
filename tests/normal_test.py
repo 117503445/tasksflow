@@ -26,6 +26,10 @@ class Task4(tasksflow.task.Task):
     def run(self, c: int):
         pass
 
+class Task5(tasksflow.task.Task):
+    def run(self, un_given: int):
+        pass
+
 
 def test_serial_run():
     tasks = [Task1(), Task2(), Task3(), Task4()]
@@ -49,3 +53,16 @@ def test_multiprocess_run():
     result = p.run()
 
     assert result == {"a": 1, "b": 2, "c": 3}
+
+def test_multiprocess_run_with_un_given():
+    tasks = [Task1(), Task2(), Task5()]
+    p = tasksflow.pool.Pool(
+        tasks,
+        executer=tasksflow.executer.MultiprocessExecuter(),
+        cache_provider=tasksflow.cache.MemoryCacheProvider(),
+    )
+    try:
+        p.run()
+        raise Exception("Should raise an exception when Task5 not executed")
+    except Exception as e:
+        pass
